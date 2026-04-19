@@ -1,0 +1,367 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Vynza deals and rewards API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: deals
+    description: Deal operations
+  - name: points
+    description: Points and rewards operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /deals:
+    get:
+      operationId: getDeals
+      tags: [deals]
+      summary: List all deals
+      description: Returns all available deals
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of deals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealListResponse"
+
+  /deals/{id}:
+    get:
+      operationId: getDeal
+      tags: [deals]
+      summary: Get a single deal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deal details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deal"
+        "404":
+          description: Deal not found
+
+  /deals/featured:
+    get:
+      operationId: getFeaturedDeals
+      tags: [deals]
+      summary: Get featured deals
+      responses:
+        "200":
+          description: Featured deals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealListResponse"
+
+  /deals/categories:
+    get:
+      operationId: getDealCategories
+      tags: [deals]
+      summary: Get all deal categories with counts
+      responses:
+        "200":
+          description: Categories with deal counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryListResponse"
+
+  /points:
+    get:
+      operationId: getPoints
+      tags: [points]
+      summary: Get points summary
+      description: Returns user's current points balance and stats
+      responses:
+        "200":
+          description: Points summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PointsSummary"
+
+  /points/history:
+    get:
+      operationId: getPointsHistory
+      tags: [points]
+      summary: Get points transaction history
+      responses:
+        "200":
+          description: Points history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PointsHistoryResponse"
+
+  /points/view-deal:
+    post:
+      operationId: viewDeal
+      tags: [points]
+      summary: Record a deal view and award points
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ViewDealRequest"
+      responses:
+        "200":
+          description: Points awarded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ViewDealResult"
+
+  /points/rewards:
+    get:
+      operationId: getRewards
+      tags: [points]
+      summary: Get available rewards to redeem
+      responses:
+        "200":
+          description: Available rewards
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RewardListResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Deal:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        store:
+          type: string
+        discount:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        imageUrl:
+          type: string
+        url:
+          type: string
+        pointsValue:
+          type: integer
+        expiresAt:
+          type: string
+          format: date-time
+        featured:
+          type: boolean
+        viewCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - store
+        - discount
+        - description
+        - category
+        - pointsValue
+        - featured
+        - viewCount
+        - createdAt
+
+    DealListResponse:
+      type: object
+      properties:
+        deals:
+          type: array
+          items:
+            $ref: "#/components/schemas/Deal"
+        total:
+          type: integer
+      required:
+        - deals
+        - total
+
+    CategoryListResponse:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+      required:
+        - categories
+
+    Category:
+      type: object
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+        icon:
+          type: string
+      required:
+        - name
+        - count
+        - icon
+
+    PointsSummary:
+      type: object
+      properties:
+        totalPoints:
+          type: integer
+        dealsViewed:
+          type: integer
+        rewardsRedeemed:
+          type: integer
+        streakDays:
+          type: integer
+        rank:
+          type: string
+        nextRankAt:
+          type: integer
+      required:
+        - totalPoints
+        - dealsViewed
+        - rewardsRedeemed
+        - streakDays
+        - rank
+        - nextRankAt
+
+    PointsTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [earned, redeemed]
+        amount:
+          type: integer
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - amount
+        - description
+        - createdAt
+
+    PointsHistoryResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PointsTransaction"
+      required:
+        - transactions
+
+    ViewDealRequest:
+      type: object
+      properties:
+        dealId:
+          type: integer
+        sessionId:
+          type: string
+      required:
+        - dealId
+        - sessionId
+
+    ViewDealResult:
+      type: object
+      properties:
+        pointsEarned:
+          type: integer
+        totalPoints:
+          type: integer
+        alreadyViewed:
+          type: boolean
+        message:
+          type: string
+      required:
+        - pointsEarned
+        - totalPoints
+        - alreadyViewed
+        - message
+
+    Reward:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        pointsCost:
+          type: integer
+        category:
+          type: string
+        available:
+          type: boolean
+      required:
+        - id
+        - title
+        - description
+        - pointsCost
+        - category
+        - available
+
+    RewardListResponse:
+      type: object
+      properties:
+        rewards:
+          type: array
+          items:
+            $ref: "#/components/schemas/Reward"
+      required:
+        - rewards

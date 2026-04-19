@@ -1,0 +1,162 @@
+import { useEffect, useMemo, useState } from "react";
+
+const DEALS = [
+  { id: 1, title: "Nike Air Max Flash Sale", store: "Nike", category: "Fashion", points: 10, discount: "30%" },
+  { id: 2, title: "Amazon Tech Week", store: "Amazon", category: "Electronics", points: 8, discount: "20%" },
+  { id: 3, title: "Adidas Summer Kickoff", store: "Adidas", category: "Sports", points: 7, discount: "25%" },
+  { id: 4, title: "Sephora Beauty Haul", store: "Sephora", category: "Beauty", points: 6, discount: "20%" },
+  { id: 5, title: "Steam Summer Sale", store: "Steam", category: "Gaming", points: 12, discount: "75%" },
+  { id: 6, title: "Apple AirPods Deal", store: "Apple", category: "Electronics", points: 8, discount: "15%" }
+];
+
+const CATEGORIES = ["All", "Fashion", "Electronics", "Sports", "Beauty", "Gaming"];
+
+export default function App() {
+  const [points, setPoints] = useState(0);
+  const [viewed, setViewed] = useState([]);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("All");
+
+  // Load saved data
+  useEffect(() => {
+    const savedPoints = localStorage.getItem("vynza_points");
+    const savedViewed = localStorage.getItem("vynza_viewed");
+
+    if (savedPoints) setPoints(Number(savedPoints));
+    if (savedViewed) setViewed(JSON.parse(savedViewed));
+  }, []);
+
+  // Persist data
+  useEffect(() => {
+    localStorage.setItem("vynza_points", String(points));
+    localStorage.setItem("vynza_viewed", JSON.stringify(viewed));
+  }, [points, viewed]);
+
+  function handleViewDeal(deal) {
+    // prevent duplicate rewards
+    if (!viewed.includes(deal.id)) {
+      setPoints((p) => p + deal.points);
+      setViewed((v) => [...v, deal.id]);
+    }
+  }
+
+  const filteredDeals = useMemo(() => {
+    return DEALS.filter((d) => {
+      const matchesSearch =
+        d.title.toLowerCase().includes(search.toLowerCase()) ||
+        d.store.toLowerCase().includes(search.toLowerCase());
+
+      const matchesCategory = category === "All" || d.category === category;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [search, category]);
+
+  return (
+    <div style={styles.app}>
+      <header style={styles.header}>
+        <h1>🔥 Vynza Pro</h1>
+
+        <div style={styles.points}>
+          ⭐ Points: <b>{points}</b>
+        </div>
+
+        <input
+          style={styles.search}
+          placeholder="Search deals, stores..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        <div style={styles.categories}>
+          {CATEGORIES.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              style={{
+                ...styles.catBtn,
+                background: category === c ? "#38bdf8" : "#1e293b"
+              }}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <main style={styles.grid}>
+        {filteredDeals.map((d) => (
+          <div key={d.id} style={styles.card}>
+            <h3>{d.title}</h3>
+            <p>{d.store}</p>
+            <p style={{ color: "lime" }}>{d.discount} OFF</p>
+            <p>+{d.points} points</p>
+
+            <button style={styles.btn} onClick={() => handleViewDeal(d)}>
+              View Deal
+            </button>
+
+            {viewed.includes(d.id) && (
+              <p style={{ color: "#4ade80" }}>✔ Earned</p>
+            )}
+          </div>
+        ))}
+      </main>
+    </div>
+  );
+}
+
+const styles = {
+  app: {
+    fontFamily: "Arial",
+    background: "#0f172a",
+    color: "white",
+    minHeight: "100vh",
+    padding: 20
+  },
+  header: {
+    position: "sticky",
+    top: 0,
+    background: "#0f172a",
+    paddingBottom: 15
+  },
+  points: {
+    marginBottom: 10,
+    fontSize: 18
+  },
+  search: {
+    width: "100%",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10
+  },
+  categories: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8
+  },
+  catBtn: {
+    padding: "6px 10px",
+    border: "none",
+    color: "white",
+    borderRadius: 6,
+    cursor: "pointer"
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: 12,
+    marginTop: 20
+  },
+  card: {
+    background: "#1e293b",
+    padding: 15,
+    borderRadius: 10
+  },
+  btn: {
+    marginTop: 10,
+    width: "100%",
+    padding: 8,
+    cursor: "pointer"
+  }
+};
